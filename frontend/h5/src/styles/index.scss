@@ -1,0 +1,88 @@
+// 全局样式
+.container {
+  padding: 16px;
+}
+
+.page-header {
+  text-align: center;
+  padding: 20px 0;
+  
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #323233;
+    margin-bottom: 8px;
+  }
+  
+  .subtitle {
+    font-size: 14px;
+    color: #969799;
+  }
+}
+
+.candidate-card {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  
+  .van-card__thumb {
+    border-radius: 8px;
+  }
+  
+  .vote-info {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+    
+    .vote-count {
+      font-size: 16px;
+      font-weight: bold;
+      color: #ee0a24;
+      margin-right: 8px;
+    }
+    
+    .rank-tag {
+      background: linear-gradient(45deg, #ff6034, #ee0a24);
+      color: white;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 12px;
+    }
+  }
+}
+
+.vote-button {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  
+  .van-button {
+    border-radius: 25px;
+    box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+  }
+}
+
+.loading-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  
+  .empty-image {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 16px;
+  }
+  
+  .empty-text {
+    color: #969799;
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,22 @@
+[Unit]
+Description=Vote Service
+After=network.target mysql.service redis.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vote-service
+ExecStart=/usr/bin/java -jar /opt/vote-service/vote-service-2.0.0.jar
+ExecStop=/bin/kill -15 $MAINPID
+Restart=always
+RestartSec=10
+
+# 环境变量
+Environment="JAVA_OPTS=-Xms512m -Xmx1024m"
+
+# 日志
+StandardOutput=append:/var/log/vote-service.log
+StandardError=append:/var/log/vote-service-error.log
+
+[Install]
+WantedBy=multi-user.target

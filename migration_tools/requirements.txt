@@ -1,0 +1,4 @@
+pymysql==1.1.0
+json5==0.9.25
+python-dateutil==2.8.2
+pytz==2023.3

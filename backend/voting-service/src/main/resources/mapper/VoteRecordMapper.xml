@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dzvote.voting.mapper.VoteRecordMapper">
+    
+    <!-- 插入投票记录 -->
+    <insert id="insert" parameterType="com.dzvote.voting.entity.VoteRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO vote_records (
+            activity_id, candidate_id, voter_name, voter_phone, voter_ip, 
+            channel, vote_time, valid, device_info, location
+        ) VALUES (
+            #{activityId}, #{candidateId}, #{voterName}, #{voterPhone}, #{voterIp},
+            #{channel}, #{voteTime}, #{valid}, #{deviceInfo}, #{location}
+        )
+    </insert>
+    
+</mapper>

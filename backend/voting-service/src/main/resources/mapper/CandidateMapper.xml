@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dzvote.voting.mapper.CandidateMapper">
+    
+    <!-- 增加票数 -->
+    <update id="incrementVotes">
+        UPDATE candidates
+        SET votes = votes + 1,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 查询票数 -->
+    <select id="selectVotesById" resultType="java.lang.Integer">
+        SELECT votes FROM candidates WHERE id = #{id}
+    </select>
+    
+</mapper>

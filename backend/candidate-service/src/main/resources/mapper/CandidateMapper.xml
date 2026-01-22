@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dzvote.candidate.mapper.CandidateMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.dzvote.candidate.entity.Candidate">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="activity_id" property="activityId" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="avatar" property="avatar" jdbcType="VARCHAR"/>
+        <result column="votes" property="votes" jdbcType="INTEGER"/>
+        <result column="candidate_no" property="candidateNo" jdbcType="VARCHAR"/>
+        <result column="service_id" property="serviceId" jdbcType="VARCHAR"/>
+        <result column="order_num" property="orderNum" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, activity_id, name, description, avatar, votes, candidate_no, service_id, order_num, status, deleted, created_at, updated_at
+    </sql>
+    
+    <!-- 查询条件 -->
+    <sql id="Query_Where_Clause">
+        <where>
+            status = 1 AND deleted = 0
+            <if test="activityId != null">
+                AND activity_id = #{activityId}
+            </if>
+        </where>
+    </sql>
+    
+    <!-- 查询候选人列表 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM candidates
+        <include refid="Query_Where_Clause"/>
+        ORDER BY order_num ASC, created_at DESC
+        <if test="page != null and size != null">
+            LIMIT #{size} OFFSET #{page}
+        </if>
+    </select>
+    
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM candidates
+        WHERE id = #{id} AND deleted = 0
+    </select>
+    
+    <!-- 插入候选人 -->
+    <insert id="insert" parameterType="com.dzvote.candidate.entity.Candidate" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO candidates (
+            activity_id, name, description, avatar, votes, candidate_no, service_id, order_num, status, deleted, created_at, updated_at
+        ) VALUES (
+            #{activityId}, #{name}, #{description}, #{avatar}, #{votes}, #{candidateNo}, #{serviceId}, #{orderNum}, #{status}, 0, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+    
+    <!-- 更新候选人 -->
+    <update id="updateById" parameterType="com.dzvote.candidate.entity.Candidate">
+        UPDATE candidates
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="votes != null">votes = #{votes},</if>
+            <if test="candidateNo != null">candidate_no = #{candidateNo},</if>
+            <if test="serviceId != null">service_id = #{serviceId},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = #{updatedAt}
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 删除候选人（逻辑删除） -->
+    <update id="deleteById">
+        UPDATE candidates SET deleted = 1, updated_at = NOW() WHERE id = #{id}
+    </update>
+    
+</mapper>

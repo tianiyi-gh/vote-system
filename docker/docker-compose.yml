@@ -1,0 +1,150 @@
+
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: dzvote-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: dzvote_new
+      MYSQL_USER: dzvote
+      MYSQL_PASSWORD: dzvote123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../../sql/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ../../sql/init_data.sql:/docker-entrypoint-initdb.d/init_data.sql
+    networks:
+      - dzvote-network
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: dzvote-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dzvote-network
+    command: redis-server --appendonly yes
+
+  # 活动管理服务
+  activity-service:
+    build:
+      context: ../../backend/activity-service
+      dockerfile: Dockerfile
+    container_name: dzvote-activity-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/dzvote_new?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+      SPRING_DATASOURCE_USERNAME: dzvote
+      SPRING_DATASOURCE_PASSWORD: dzvote123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - dzvote-network
+
+  # 投票服务
+  vote-service:
+    build:
+      context: ../../backend/vote-service
+      dockerfile: Dockerfile
+    container_name: dzvote-vote-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/dzvote_new?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+      SPRING_DATASOURCE_USERNAME: dzvote
+      SPRING_DATASOURCE_PASSWORD: dzvote123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - dzvote-network
+
+  # 统计服务
+  statistics-service:
+    build:
+      context: ../../backend/statistics-service
+      dockerfile: Dockerfile
+    container_name: dzvote-statistics-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/dzvote_new?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+      SPRING_DATASOURCE_USERNAME: dzvote
+      SPRING_DATASOURCE_PASSWORD: dzvote123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - dzvote-network
+
+  # 网关服务
+  gateway-service:
+    build:
+      context: ../../backend/gateway-service
+      dockerfile: Dockerfile
+    container_name: dzvote-gateway-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      ACTIVITY_SERVICE_URL: http://activity-service:8081
+      VOTE_SERVICE_URL: http://vote-service:8082
+      STATISTICS_SERVICE_URL: http://statistics-service:8083
+    ports:
+      - "8084:8084"
+    depends_on:
+      - activity-service
+      - vote-service
+      - statistics-service
+    networks:
+      - dzvote-network
+
+  # 管理后台
+  admin-frontend:
+    build:
+      context: ../../frontend/admin
+      dockerfile: Dockerfile
+    container_name: dzvote-admin
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway-service
+    networks:
+      - dzvote-network
+
+  # H5移动端
+  h5-frontend:
+    build:
+      context: ../../frontend/h5
+      dockerfile: Dockerfile
+    container_name: dzvote-h5
+    ports:
+      - "81:80"
+    depends_on:
+      - gateway-service
+    networks:
+      - dzvote-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  dzvote-network:
+    driver: bridge

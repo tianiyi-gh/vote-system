@@ -1,0 +1,107 @@
+server:
+  port: 8082
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+spring:
+  application:
+    name: vote-service
+
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3307/dzvote_v2?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: root
+    password: mysql8123
+    
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        enabled: false
+
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    password: 
+    timeout: 10000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.dzvote.vote.entity
+
+# 微信配置
+wechat:
+  # 公众号 AppID
+  app-id: wx4a6082a9eb74c84e
+
+  # 公众号 AppSecret
+  app-secret: 8a2d21736509e9b5eb50d619750e6115
+
+  # JS 接口安全域名
+  js-api-domain: tp.dzwww.com
+
+  # access_token 缓存时间（秒）
+  token-expire-time: 7200
+
+  # jsapi_ticket 缓存时间（秒）
+  ticket-expire-time: 7200
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    jdbc-type-for-null: NULL
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+    default-fetch-size: 100
+    default-statement-timeout: 30
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+logging:
+  level:
+    com.dzvote.vote: debug
+    org.springframework.web: debug
+    com.zaxxer.hikari: info
+    org.springframework.jdbc: info
+  pattern:
+    console: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  info:
+    title: 投票服务API
+    description: 投票系统核心服务
+    version: 2.0.0
+
+# 文件上传配置
+# 使用绝对路径
+upload:
+  path: D:/ide/toupiao/ROOT_CodeBuddyCN/新架构/backend/vote-service/uploads

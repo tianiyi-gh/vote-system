@@ -1,0 +1,53 @@
+# 编译输出
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+.nuxt/
+.cache/
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*~
+
+# 操作系统
+Thumbs.db
+.DS_Store
+
+# 敏感配置
+application-local.yml
+application-prod.yml
+.env
+
+# 上传文件
+uploads/
+
+# 构建文件
+backend/*/target/
+frontend/*/dist/
+frontend/*/node_modules/
+
+# 其他
+backend/info.txt

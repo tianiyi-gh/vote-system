@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dzvote.vote.mapper.VoteRecordMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.dzvote.vote.entity.VoteRecord">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="activity_id" property="activityId" jdbcType="BIGINT"/>
+        <result column="candidate_id" property="candidateId" jdbcType="BIGINT"/>
+        <result column="channel" property="channel" jdbcType="VARCHAR"/>
+        <result column="voter_name" property="voterName" jdbcType="VARCHAR"/>
+        <result column="voter_phone" property="voterPhone" jdbcType="VARCHAR"/>
+        <result column="voter_ip" property="voterIp" jdbcType="VARCHAR"/>
+        <result column="vote_time" property="voteTime" jdbcType="TIMESTAMP"/>
+        <result column="valid" property="valid" jdbcType="INTEGER"/>
+        <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 插入投票记录 -->
+    <insert id="insert" parameterType="com.dzvote.vote.entity.VoteRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO vote_records (
+            activity_id, candidate_id, channel, voter_name, voter_phone,
+            voter_ip, vote_time, valid, device_info, location
+        ) VALUES (
+            #{activityId}, #{candidateId}, #{channel}, #{voterName}, #{voterPhone},
+            #{voterIp}, #{voteTime}, #{valid}, #{deviceInfo}, #{location}
+        )
+    </insert>
+
+    <!-- 统计候选人票数 -->
+    <select id="countCandidateVotes" resultType="com.dzvote.vote.entity.VoteRecordStats">
+        SELECT
+            COUNT(*) AS totalVotes,
+            COUNT(CASE WHEN valid = 1 THEN 1 END) AS validVotes,
+            COUNT(CASE WHEN valid = 0 THEN 1 END) AS invalidVotes
+        FROM vote_records
+        WHERE candidate_id = #{candidateId}
+        AND activity_id = #{activityId}
+    </select>
+
+    <!-- 统计活动总票数 -->
+    <select id="countActivityVotes" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM vote_records
+        WHERE activity_id = #{activityId} AND valid = 1
+    </select>
+
+    <!-- 查询投票记录 -->
+    <select id="findByActivity" resultMap="BaseResultMap">
+        SELECT id, activity_id, candidate_id, channel, voter_name, voter_phone,
+               voter_ip, vote_time, valid, device_info, location
+        FROM vote_records
+        WHERE activity_id = #{activityId}
+        ORDER BY vote_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+</mapper>

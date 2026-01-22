@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>投票管理后台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f7fa; }
+        .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 { margin: 0; font-size: 24px; }
+
+        /* Login */
+        .login-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: 100px auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-section h2 { text-align: center; margin-bottom: 30px; color: #667eea; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: white; padding: 5px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .tab { flex: 1; padding: 12px; border: none; background: transparent; cursor: pointer; border-radius: 8px; font-weight: 500; color: #666; transition: all 0.3s; }
+        .tab:hover { background: #f0f0f0; }
+        .tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+
+        /* Cards */
+        .card { background: white; padding: 25px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card h2 { margin-bottom: 20px; color: #1e3c72; font-size: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); }
+        .stat-value { font-size: 36px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 14px; opacity: 0.9; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 600; color: #1e3c72; }
+        tr:hover { background: #f8f9fa; }
+
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #333; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: #667eea;
+        }
+
+        /* Buttons */
+        .btn { padding: 10px 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-danger { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .btn-success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .btn-group { display: flex; gap: 10px; }
+
+        /* Alerts */
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+        .alert.success { background: #d4edda; color: #155724; border-left: 4px solid #28a745; }
+        .alert.error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal { background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+
+        /* Rate Limit Settings */
+        .rate-limit-item { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .rate-limit-item h4 { margin-bottom: 10px; color: #1e3c72; }
+        .rate-limit-setting { display: flex; gap: 15px; align-items: center; }
+        .rate-limit-setting label { min-width: 150px; font-weight: 500; }
+
+        /* Image Upload */
+        .image-upload-section { text-align: center; margin-bottom: 20px; }
+        .image-preview {
+            width: 150px; height: 150px; margin: 0 auto; border: 2px dashed #667eea;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; cursor: pointer; transition: all 0.3s; background: white;
+        }
+        .image-preview:hover { border-color: #764ba2; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .image-placeholder { text-align: center; color: #667eea; }
+        .upload-icon { font-size: 40px; display: block; margin-bottom: 10px; }
+        .image-actions { text-align: center; margin-top: 10px; }
+
+        /* Progress Bar */
+        .progress-container { margin: 15px 0; text-align: center; }
+        .progress-bar { width: 100%; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s; }
+
+        /* Status badges */
+        .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-1 { background: #d4edda; color: #155724; }
+        .status-2 { background: #f8d7da; color: #721c24; }
+        .status-3 { background: #fff3cd; color: #856404; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .tabs { flex-direction: column; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Login Section -->
+        <div v-if="!token" class="login-section">
+            <h2>🔐 管理员登录</h2>
+            <div v-if="message" :class="['alert', messageType]">{{ message }}</div>
+            <div class="form-group">
+                <label>用户名</label>
+                <input v-model="loginForm.username" type="text" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input v-model="loginForm.password" type="password" placeholder="请输入密码">
+            </div>
+            <button class="btn" @click="login" :disabled="loading" style="width: 100%; padding: 12px;">
+                {{ loading ? '登录中...' : '登录' }}
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div v-else>
+            <div class="header">
+                <h1>🎯 投票管理后台</h1>
+                <button class="btn btn-danger btn-sm" @click="logout">退出登录</button>
+            </div>
+
+            <div class="container">
+                <!-- Stats Cards -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ overviewStats.totalActivities }}</div>
+                        <div class="stat-label">活动总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ overviewStats.totalCandidates }}</div>
+                        <div class="stat-label">候选人数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ overviewStats.totalVotes }}</div>
+                        <div class="stat-label">总票数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ overviewStats.activeActivities }}</div>
+                        <div class="stat-label">进行中活动</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button :class="['tab', {active: activeTab === 'activities'}]" @click="activeTab = 'activities'">
+                        📋 活动管理
+                    </button>
+                    <button :class="['tab', {active: activeTab === 'candidates'}]" @click="activeTab = 'candidates'">
+                        👥 候选人管理
+                    </button>
+                    <button :class="['tab', {active: activeTab === 'statistics'}]" @click="activeTab = 'statistics'">
+                        📊 统计分析
+                    </button>
+                    <button :class="['tab', {active: activeTab === 'settings'}]" @click="activeTab = 'settings'">
+                        ⚙️ 防刷票设置
+                    </button>
+                </div>
+
+                <!-- Activities Tab -->
+                <div v-show="activeTab === 'activities'" class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>📋 活动管理</h2>
+                        <button class="btn btn-success" @click="showActivityModal = true; activityForm = {status: 1, voteLimit: 1}">+ 新建活动</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>标题</th>
+                                <th>开始时间</th>
+                                <th>结束时间</th>
+                                <th>状态</th>
+                                <th>候选人数</th>
+                                <th>总票数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="activity in activities" :key="activity.id">
+                                <td>{{ activity.id }}</td>
+                                <td>{{ activity.title }}</td>
+                                <td>{{ formatDate(activity.startTime) }}</td>
+                                <td>{{ formatDate(activity.endTime) }}</td>
+                                <td><span :class="['status-badge', 'status-' + activity.id]">{{ getStatusText(activity.status) }}</span></td>
+                                <td>{{ activity.candidateCount }}</td>
+                                <td>{{ activity.totalVotes }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm" @click="editActivity(activity)">编辑</button>
+                                        <button class="btn btn-danger btn-sm" @click="deleteActivity(activity.id)">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Candidates Tab -->
+                <div v-show="activeTab === 'candidates'" class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2>👥 候选人管理</h2>
+                        <div style="display: flex; gap: 10px;">
+                            <select v-model="selectedActivityId" @change="loadCandidates" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="">选择活动</option>
+                                <option v-for="activity in activities" :key="activity.id" :value="activity.id">
+                                    {{ activity.title }}
+                                </option>
+                            </select>
+                            <button class="btn btn-success" @click="openAddCandidateModal" :disabled="!selectedActivityId">
+                                + 新建候选人
+                            </button>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>姓名</th>
+                                <th>描述</th>
+                                <th>票数</th>
+                                <th>排序</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="candidate in candidates" :key="candidate.id">
+                                <td>{{ candidate.id }}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <img v-if="candidate.avatar" :src="getAvatarUrl(candidate.avatar)" alt="头像" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                        <span>{{ candidate.name }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ candidate.description || '-' }}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="number" v-model.number="candidate.voteAdjust" style="width: 60px; padding: 5px;" placeholder="+/-">
+                                        <button class="btn btn-sm" @click="adjustVotes(candidate.id, candidate.voteAdjust || 0)">调整</button>
+                                        {{ candidate.votes }}
+                                    </div>
+                                </td>
+                                <td>{{ candidate.orderNum }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm" @click="editCandidate(candidate)">编辑</button>
+                                        <button class="btn btn-danger btn-sm" @click="deleteCandidate(candidate.id)">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div v-show="activeTab === 'statistics'" class="card">
+                    <h2>📊 统计分析</h2>
+                    <div style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center;">
+                        <label>选择活动：</label>
+                        <select v-model="statActivityId" @change="loadStatistics" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                            <option value="">选择活动</option>
+                            <option v-for="activity in activities" :key="activity.id" :value="activity.id">
+                                {{ activity.title }}
+                            </option>
+                        </select>
+                        <button class="btn btn-success btn-sm" @click="exportReport" :disabled="!statActivityId">📥 导出报表</button>
+                    </div>
+
+                    <div v-if="activityStats" style="margin-top: 20px;">
+                        <h3>活动概览</h3>
+                        <div class="stats" style="margin-top: 15px;">
+                            <div class="stat-card">
+                                <div class="stat-value">{{ activityStats.totalVotes }}</div>
+                                <div class="stat-label">总票数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">{{ activityStats.uniqueVoters }}</div>
+                                <div class="stat-label">独立投票人数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">{{ activityStats.candidates.length }}</div>
+                                <div class="stat-label">候选人数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">{{ activityStats.dailyVotes }}</div>
+                                <div class="stat-label">今日票数</div>
+                            </div>
+                        </div>
+
+                        <!-- 投票趋势图表 -->
+                        <h3 style="margin-top: 30px;">投票趋势（近7天）</h3>
+                        <div id="voteTrendChart" style="width: 100%; height: 400px; margin-top: 15px;"></div>
+
+                        <!-- 候选人得票分布 -->
+                        <h3 style="margin-top: 30px;">候选人得票分布</h3>
+                        <div id="voteDistributionChart" style="width: 100%; height: 400px; margin-top: 15px;"></div>
+
+                        <!-- 小时参与度 -->
+                        <h3 style="margin-top: 30px;">今日时段参与度</h3>
+                        <div id="hourlyParticipationChart" style="width: 100%; height: 400px; margin-top: 15px;"></div>
+
+                        <h3 style="margin-top: 30px;">候选人详细排名</h3>
+                        <table style="margin-top: 15px;">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>姓名</th>
+                                    <th>票数</th>
+                                    <th>占比</th>
+                                    <th>趋势</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(candidate, index) in sortedCandidates" :key="candidate.id">
+                                    <td>
+                                        <span v-if="index === 0">🥇</span>
+                                        <span v-else-if="index === 1">🥈</span>
+                                        <span v-else-if="index === 2">🥉</span>
+                                        <span v-else>{{ index + 1 }}</span>
+                                    </td>
+                                    <td>{{ candidate.name }}</td>
+                                    <td>{{ candidate.votes }}</td>
+                                    <td>{{ ((candidate.votes / totalStatVotes * 100) || 0).toFixed(2) }}%</td>
+                                    <td>
+                                        <span v-if="index === 0" style="color: #28a745;">📈 领先</span>
+                                        <span v-else-if="index === sortedCandidates.length - 1" style="color: #dc3545;">📉 暂居末位</span>
+                                        <span v-else style="color: #667eea;">➡️ 追赶中</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Settings Tab (Rate Limit) -->
+                <div v-show="activeTab === 'settings'" class="card">
+                    <h2>⚙️ 防刷票设置</h2>
+
+                    <div class="rate-limit-item">
+                        <h4>投票限制</h4>
+                        <div class="rate-limit-setting">
+                            <label>IP限制（每小时最多投票数）：</label>
+                            <input type="number" v-model.number="rateLimit.voteIpLimit" min="1" max="10" style="width: 100px;">
+                            <span style="color: #666;">同一IP在1小时内最多能投多少票</span>
+                        </div>
+                    </div>
+
+                    <div class="rate-limit-item">
+                        <h4>频率限制</h4>
+                        <div class="rate-limit-setting">
+                            <label>请求频率限制（每分钟）：</label>
+                            <input type="number" v-model.number="rateLimit.rateLimitCount" min="5" max="100" style="width: 100px;">
+                            <span style="color: #666;">每个IP每分钟最多请求次数</span>
+                        </div>
+                    </div>
+
+                    <div class="rate-limit-item">
+                        <h4>验证码设置</h4>
+                        <div class="rate-limit-setting">
+                            <label>启用验证码：</label>
+                            <input type="checkbox" v-model="rateLimit.enableCaptcha">
+                            <span style="color: #666;">投票前需要验证码（需后端实现）</span>
+                        </div>
+                    </div>
+
+                    <div class="rate-limit-item">
+                        <h4>用户限制</h4>
+                        <div class="rate-limit-setting">
+                            <label>每人投票限制：</label>
+                            <input type="number" v-model.number="rateLimit.userVoteLimit" min="1" max="10" style="width: 100px;">
+                            <span style="color: #666;">每个用户最多能投多少票</span>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success" @click="saveRateLimitSettings" style="margin-top: 20px;">💾 保存设置</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Modal -->
+        <div v-if="showActivityModal" class="modal-overlay">
+            <div class="modal">
+                <h2>{{ activityForm.id ? '编辑活动' : '新建活动' }}</h2>
+                <div class="form-group">
+                    <label>活动标题</label>
+                    <input v-model="activityForm.title" type="text" placeholder="请输入活动标题">
+                </div>
+                <div class="form-group">
+                    <label>活动描述</label>
+                    <textarea v-model="activityForm.description" rows="3" placeholder="请输入活动描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>开始时间</label>
+                    <input v-model="activityForm.startTime" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label>结束时间</label>
+                    <input v-model="activityForm.endTime" type="datetime-local">
+                </div>
+                <div class="form-group">
+                    <label>每人投票限制</label>
+                    <input v-model.number="activityForm.voteLimit" type="number" min="1" max="10">
+                </div>
+                <div class="form-group">
+                    <label>状态</label>
+                    <select v-model.number="activityForm.status">
+                        <option :value="1">进行中</option>
+                        <option :value="2">已结束</option>
+                        <option :value="3">已取消</option>
+                    </select>
+                </div>
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn" @click="saveActivity">保存</button>
+                    <button class="btn btn-danger" @click="showActivityModal = false">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidate Modal -->
+        <div v-if="showCandidateModal" class="modal-overlay">
+            <div class="modal">
+                <h2>{{ candidateForm.id ? '编辑候选人' : '新建候选人' }}</h2>
+
+                <!-- Image Upload Section -->
+                <div class="image-upload-section">
+                    <div class="image-preview" @click="triggerFileInput">
+                        <img v-if="candidateForm.avatarPreview" :src="candidateForm.avatarPreview" alt="预览">
+                        <div v-else class="image-placeholder">
+                            <span class="upload-icon">📷</span>
+                            <span>点击上传图片</span>
+                        </div>
+                        <input type="file" ref="fileInput" @change="handleImageUpload" accept="image/*" style="display: none;">
+                    </div>
+                    <div v-if="candidateForm.avatarPreview" class="image-actions">
+                        <button class="btn btn-danger btn-sm" @click="removeImage">删除图片</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>姓名 *</label>
+                    <input v-model="candidateForm.name" type="text" placeholder="请输入候选人姓名">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea v-model="candidateForm.description" rows="3"
+                              placeholder="请输入候选人描述（最多30字）"
+                              maxlength="30"
+                              @input="limitDescriptionLength"></textarea>
+                    <div style="text-align: right; color: #999; font-size: 12px; margin-top: 5px;">
+                        {{ (candidateForm.description || '').length }}/30
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>排序号</label>
+                    <input v-model.number="candidateForm.orderNum" type="number" min="0" placeholder="数值越小排序越靠前">
+                </div>
+
+                <!-- Progress Bar -->
+                <div v-if="uploading" class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" :style="{width: uploadProgress + '%'}"></div>
+                    </div>
+                    <span>上传中... {{ uploadProgress }}%</span>
+                </div>
+
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn" @click="saveCandidate" :disabled="uploading || !candidateForm.name">保存</button>
+                    <button class="btn btn-danger" @click="showCandidateModal = false">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    token: localStorage.getItem('admin_token'),
+                    loginForm: { username: '', password: '' },
+                    loading: false,
+                    message: '',
+                    messageType: '',
+
+                    activeTab: 'activities',
+
+                    // Activities
+                    activities: [],
+                    showActivityModal: false,
+                    activityForm: {},
+
+                    // Candidates
+                    selectedActivityId: null,
+                    candidates: [],
+                    showCandidateModal: false,
+                    candidateForm: {},
+
+                    // Image Upload
+                    uploading: false,
+                    uploadProgress: 0,
+
+                    // Statistics
+                    statActivityId: 1,
+                    activityStats: null,
+                    voteTrends: [],
+                    hourlyParticipation: [],
+
+                    // Rate Limit Settings
+                    rateLimit: {
+                        voteIpLimit: 1,
+                        rateLimitCount: 10,
+                        enableCaptcha: false,
+                        userVoteLimit: 1
+                    }
+                }
+            },
+            computed: {
+                sortedCandidates() {
+                    if (!this.activityStats) return [];
+                    return [...this.activityStats.candidates].sort((a, b) => b.votes - a.votes);
+                },
+                totalStatVotes() {
+                    if (!this.activityStats) return 0;
+                    return this.activityStats.candidates.reduce((sum, c) => sum + c.votes, 0);
+                },
+                overviewStats() {
+                    return {
+                        totalActivities: this.activities.length,
+                        activeActivities: this.activities.filter(a => a.status === 1).length,
+                        totalCandidates: this.candidates.length,
+                        totalVotes: this.activities.reduce((sum, a) => sum + (a.totalVotes || 0), 0)
+                    };
+                }
+            },
+            mounted() {
+                if (this.token) {
+                    this.loadActivities();
+                    this.loadRateLimitSettings();
+                }
+                // 初始化候选人表单
+                this.resetCandidateForm();
+            },
+            methods: {
+                async login() {
+                    this.loading = true;
+                    this.message = '';
+                    try {
+                        const response = await axios.post('http://localhost:8084/api/auth/login', {
+                            username: this.loginForm.username,
+                            password: this.loginForm.password
+                        });
+                        this.token = response.data.token;
+                        localStorage.setItem('admin_token', this.token);
+                        this.message = '登录成功';
+                        this.messageType = 'success';
+                        this.loadActivities();
+                        this.loadRateLimitSettings();
+                    } catch (error) {
+                        this.message = '登录失败: ' + (error.response?.data?.message || error.message);
+                        this.messageType = 'error';
+                    }
+                    this.loading = false;
+                },
+
+                logout() {
+                    localStorage.removeItem('admin_token');
+                    this.token = null;
+                    this.activeTab = 'activities';
+                },
+
+                // Activities
+                async loadActivities() {
+                    try {
+                        const response = await axios.get('http://localhost:8082/api/activities');
+                        this.activities = response.data.data || [];
+                    } catch (error) {
+                        console.error('加载活动失败:', error);
+                    }
+                },
+
+                editActivity(activity) {
+                    this.activityForm = { ...activity };
+                    this.showActivityModal = true;
+                },
+
+                async saveActivity() {
+                    try {
+                        if (this.activityForm.id) {
+                            await axios.put(`http://localhost:8082/api/activities/${this.activityForm.id}`, this.activityForm);
+                        } else {
+                            await axios.post('http://localhost:8082/api/activities', this.activityForm);
+                        }
+                        this.showActivityModal = false;
+                        this.loadActivities();
+                        this.showMessage('保存成功', 'success');
+                    } catch (error) {
+                        this.showMessage('保存失败: ' + error.message, 'error');
+                    }
+                },
+
+                async deleteActivity(id) {
+                    if (!confirm('确定要删除这个活动吗？')) return;
+                    try {
+                        await axios.delete(`http://localhost:8082/api/activities/${id}`);
+                        this.loadActivities();
+                        this.showMessage('删除成功', 'success');
+                    } catch (error) {
+                        this.showMessage('删除失败: ' + error.message, 'error');
+                    }
+                },
+
+                // Candidates
+                async loadCandidates() {
+                    if (!this.selectedActivityId) return;
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/admin/candidates?activityId=${this.selectedActivityId}`);
+                        this.candidates = response.data.data || [];
+                    } catch (error) {
+                        console.error('加载候选人失败:', error);
+                    }
+                },
+
+                openAddCandidateModal() {
+                    console.log('openAddCandidateModal 被调用');
+                    console.log('打开前的 candidateForm:', this.candidateForm);
+                    this.resetCandidateForm();
+                    console.log('重置后的 candidateForm:', this.candidateForm);
+                    console.log('candidateForm.name:', this.candidateForm.name);
+                    this.showCandidateModal = true;
+                },
+
+                editCandidate(candidate) {
+                    this.candidateForm = { ...candidate, avatarPreview: candidate.avatar };
+                    this.showCandidateModal = true;
+                },
+
+                triggerFileInput() {
+                    this.$refs.fileInput.click();
+                },
+
+                handleImageUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // 验证文件类型
+                    if (!file.type.startsWith('image/')) {
+                        this.showMessage('请选择图片文件', 'error');
+                        return;
+                    }
+
+                    // 验证文件大小（限制为2MB）
+                    if (file.size > 2 * 1024 * 1024) {
+                        this.showMessage('图片大小不能超过2MB', 'error');
+                        return;
+                    }
+
+                    this.uploadImage(file);
+                },
+
+                async uploadImage(file) {
+                    console.log('uploadImage 被调用，文件:', file);
+                    this.uploading = true;
+                    this.uploadProgress = 0;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        console.log('开始上传文件到服务器...');
+
+                        const response = await axios.post('http://localhost:8082/api/upload/avatar', formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            },
+                            onUploadProgress: (progressEvent) => {
+                                const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                                this.uploadProgress = percentCompleted;
+                                console.log('上传进度:', percentCompleted + '%');
+                            }
+                        });
+
+                        console.log('服务器响应:', response.data);
+
+                        if (response.data.code === 200) {
+                            const fileUrl = response.data.data.url;
+                            console.log('文件URL:', fileUrl);
+                            // 完整URL用于预览
+                            this.candidateForm.avatarPreview = 'http://localhost:8082' + fileUrl;
+                            // 相对路径用于保存到数据库
+                            this.candidateForm.avatar = fileUrl;
+                            console.log('设置 avatarPreview:', this.candidateForm.avatarPreview);
+                            console.log('设置 avatar:', this.candidateForm.avatar);
+                            this.showMessage('图片上传成功', 'success');
+                        } else {
+                            this.showMessage('图片上传失败: ' + response.data.message, 'error');
+                        }
+                    } catch (error) {
+                        console.error('上传失败:', error);
+                        console.error('错误详情:', error.response?.data);
+                        this.showMessage('图片上传失败: ' + (error.response?.data?.message || error.message), 'error');
+                    } finally {
+                        this.uploading = false;
+                    }
+                },
+
+                removeImage() {
+                    this.candidateForm.avatar = null;
+                    this.candidateForm.avatarPreview = null;
+                    if (this.$refs.fileInput) {
+                        this.$refs.fileInput.value = '';
+                    }
+                },
+
+                async saveCandidate() {
+                    console.log('saveCandidate 被调用');
+                    console.log('candidateForm:', this.candidateForm);
+                    console.log('selectedActivityId:', this.selectedActivityId);
+                    console.log('uploading:', this.uploading);
+                    console.log('candidateForm.avatar:', this.candidateForm.avatar);
+
+                    if (!this.selectedActivityId) {
+                        this.showMessage('请先选择活动', 'error');
+                        return;
+                    }
+
+                    if (!this.candidateForm.name) {
+                        this.showMessage('请输入候选人姓名', 'error');
+                        console.log('姓名为空:', this.candidateForm.name);
+                        return;
+                    }
+
+                    try {
+                        const data = {
+                            activityId: this.selectedActivityId,
+                            name: this.candidateForm.name,
+                            description: this.candidateForm.description,
+                            orderNum: this.candidateForm.orderNum || 0,
+                            status: 1
+                        };
+
+                        // 如果有上传图片，保存文件路径
+                        if (this.candidateForm.avatar) {
+                            data.avatar = this.candidateForm.avatar;
+                            console.log('添加 avatar 到数据:', data.avatar);
+                        } else {
+                            console.log('没有 avatar 数据');
+                        }
+
+                        console.log('准备发送数据:', data);
+                        console.log('候选人ID:', this.candidateForm.id);
+
+                        let response;
+                        if (this.candidateForm.id) {
+                            response = await axios.put(`http://localhost:8082/api/admin/candidates/${this.candidateForm.id}`, data);
+                        } else {
+                            response = await axios.post('http://localhost:8082/api/admin/candidates', data);
+                        }
+                        console.log('后端响应:', response.data);
+
+                        // 先关闭模态框，再清空表单和刷新数据
+                        this.showCandidateModal = false;
+                        setTimeout(() => {
+                            this.resetCandidateForm();
+                            this.loadCandidates();
+                        }, 300);
+
+                        this.showMessage('保存成功', 'success');
+                    } catch (error) {
+                        console.error('保存失败:', error);
+                        this.showMessage('保存失败: ' + (error.response?.data?.message || error.message), 'error');
+                    }
+                },
+
+                resetCandidateForm() {
+                    this.candidateForm = {
+                        name: '',
+                        description: '',
+                        avatar: null,
+                        avatarPreview: null,
+                        orderNum: 0,
+                        id: null
+                    };
+                    this.uploading = false;
+                    this.uploadProgress = 0;
+                    if (this.$refs.fileInput) {
+                        this.$refs.fileInput.value = '';
+                    }
+                },
+
+                async deleteCandidate(id) {
+                    if (!confirm('确定要删除这个候选人吗？')) return;
+                    try {
+                        await axios.delete(`http://localhost:8082/api/admin/candidates/${id}`);
+                        this.loadCandidates();
+                        this.showMessage('删除成功', 'success');
+                    } catch (error) {
+                        this.showMessage('删除失败: ' + error.message, 'error');
+                    }
+                },
+
+                async adjustVotes(id, count) {
+                    if (!count || count === 0) return;
+                    try {
+                        await axios.post(`http://localhost:8082/api/admin/candidates/${id}/votes/adjust`, null, {
+                            params: { count: count }
+                        });
+                        this.loadCandidates();
+                        this.showMessage('票数调整成功', 'success');
+                    } catch (error) {
+                        this.showMessage('调整失败: ' + error.message, 'error');
+                    }
+                },
+
+                // Statistics
+                async loadStatistics() {
+                    if (!this.statActivityId) return;
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/admin/statistics/${this.statActivityId}`);
+                        this.activityStats = response.data.data;
+
+                        // 同时加载趋势数据和参与度数据
+                        this.loadVoteTrends();
+                        this.loadHourlyParticipation();
+
+                        // 加载完成后初始化图表
+                        this.$nextTick(() => {
+                            this.initVoteTrendChart();
+                            this.initVoteDistributionChart();
+                            this.initHourlyParticipationChart();
+                        });
+                    } catch (error) {
+                        console.error('加载统计数据失败:', error);
+                    }
+                },
+
+                async loadVoteTrends() {
+                    if (!this.statActivityId) return;
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/admin/trends/${this.statActivityId}`);
+                        this.voteTrends = response.data.data || [];
+                        // 重新初始化趋势图
+                        this.$nextTick(() => {
+                            this.initVoteTrendChart();
+                        });
+                    } catch (error) {
+                        console.error('加载投票趋势失败:', error);
+                    }
+                },
+
+                async loadHourlyParticipation() {
+                    if (!this.statActivityId) return;
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/admin/participation/${this.statActivityId}`);
+                        this.hourlyParticipation = response.data.data || [];
+                        // 重新初始化时段参与度图
+                        this.$nextTick(() => {
+                            this.initHourlyParticipationChart();
+                        });
+                    } catch (error) {
+                        console.error('加载时段参与度失败:', error);
+                    }
+                },
+
+                initVoteTrendChart() {
+                    const chartDom = document.getElementById('voteTrendChart');
+                    if (!chartDom) return;
+
+                    const myChart = echarts.init(chartDom);
+
+                    const dates = this.voteTrends.map(t => t.date);
+                    const votes = this.voteTrends.map(t => t.votes);
+
+                    const option = {
+                        title: {
+                            text: '投票趋势'
+                        },
+                        tooltip: {
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: dates.length ? dates : ['1-01', '1-02', '1-03', '1-04', '1-05', '1-06', '1-07']
+                        },
+                        yAxis: {
+                            type: 'value',
+                            name: '票数'
+                        },
+                        series: [{
+                            data: votes.length ? votes : [100, 150, 200, 180, 220, 250, 300],
+                            type: 'line',
+                            smooth: true,
+                            areaStyle: {
+                                opacity: 0.3
+                            },
+                            itemStyle: {
+                                color: '#667eea'
+                            }
+                        }]
+                    };
+                    myChart.setOption(option);
+                },
+
+                initVoteDistributionChart() {
+                    const chartDom = document.getElementById('voteDistributionChart');
+                    if (!chartDom || !this.activityStats) return;
+
+                    const candidates = this.activityStats.candidates;
+                    const names = candidates.map(c => c.name);
+                    const votes = candidates.map(c => c.votes);
+
+                    const myChart = echarts.init(chartDom);
+                    const option = {
+                        title: {
+                            text: '候选人得票分布'
+                        },
+                        tooltip: {
+                            trigger: 'item',
+                            formatter: '{b}: {c} 票 ({d}%)'
+                        },
+                        series: [{
+                            type: 'pie',
+                            radius: '60%',
+                            data: candidates.map((c, index) => ({
+                                value: c.votes,
+                                name: c.name,
+                                itemStyle: {
+                                    color: [
+                                        '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                                        '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+                                    ][index % 8]
+                                }
+                            })),
+                            emphasis: {
+                                itemStyle: {
+                                    shadowBlur: 10,
+                                    shadowOffsetX: 0,
+                                    shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            },
+                            label: {
+                                show: true,
+                                formatter: '{b}: {d}%'
+                            }
+                        }]
+                    };
+                    myChart.setOption(option);
+                },
+
+                initHourlyParticipationChart() {
+                    const chartDom = document.getElementById('hourlyParticipationChart');
+                    if (!chartDom) return;
+
+                    const myChart = echarts.init(chartDom);
+
+                    const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
+                    const voteCounts = Array(24).fill(0);
+                    const uniqueVoters = Array(24).fill(0);
+
+                    // 填充实际数据
+                    if (this.hourlyParticipation.length > 0) {
+                        this.hourlyParticipation.forEach(item => {
+                            const hour = item.hour || 0;
+                            voteCounts[hour] = item.voteCount || 0;
+                            uniqueVoters[hour] = item.uniqueVoters || 0;
+                        });
+                    }
+
+                    const option = {
+                        title: {
+                            text: '今日时段参与度'
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            axisPointer: {
+                                type: 'cross'
+                            }
+                        },
+                        legend: {
+                            data: ['投票数', '独立人数']
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: hours
+                        },
+                        yAxis: {
+                            type: 'value'
+                        },
+                        series: [
+                            {
+                                name: '投票数',
+                                type: 'bar',
+                                data: voteCounts,
+                                itemStyle: {
+                                    color: '#667eea'
+                                }
+                            },
+                            {
+                                name: '独立人数',
+                                type: 'line',
+                                data: uniqueVoters,
+                                itemStyle: {
+                                    color: '#764ba2'
+                                },
+                                smooth: true
+                            }
+                        ]
+                    };
+                    myChart.setOption(option);
+                },
+
+                // Rate Limit Settings
+                loadRateLimitSettings() {
+                    const saved = localStorage.getItem('rate_limit_settings');
+                    if (saved) {
+                        this.rateLimit = JSON.parse(saved);
+                    }
+                },
+
+                saveRateLimitSettings() {
+                    localStorage.setItem('rate_limit_settings', JSON.stringify(this.rateLimit));
+                    this.showMessage('设置已保存', 'success');
+                },
+
+                async exportReport() {
+                    if (!this.statActivityId) {
+                        this.showMessage('请先选择活动', 'error');
+                        return;
+                    }
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/admin/export/${this.statActivityId}`);
+                        if (response.data.code === 200) {
+                            this.showMessage('报表导出请求已发送', 'success');
+                        } else {
+                            this.showMessage('导出失败: ' + response.data.message, 'error');
+                        }
+                    } catch (error) {
+                        this.showMessage('导出失败: ' + error.message, 'error');
+                    }
+                },
+
+                // Utilities
+                showMessage(msg, type) {
+                    this.message = msg;
+                    this.messageType = type;
+                    setTimeout(() => {
+                        this.message = '';
+                    }, 3000);
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '-';
+                    const date = new Date(dateStr);
+                    return date.toLocaleString('zh-CN');
+                },
+
+                getStatusText(status) {
+                    const statusMap = {
+                        1: '进行中',
+                        2: '已结束',
+                        3: '已取消'
+                    };
+                    return statusMap[status] || '未知';
+                },
+
+                getAvatarUrl(avatar) {
+                    if (!avatar) return '';
+                    // 如果已经是完整URL，直接返回
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                        return avatar;
+                    }
+                    // 否则拼接完整URL
+                    return 'http://localhost:8082' + avatar;
+                },
+
+                limitDescriptionLength() {
+                    if (this.candidateForm.description && this.candidateForm.description.length > 30) {
+                        this.candidateForm.description = this.candidateForm.description.substring(0, 30);
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

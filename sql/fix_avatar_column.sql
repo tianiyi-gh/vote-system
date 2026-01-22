@@ -1,0 +1,1 @@
+ALTER TABLE candidates MODIFY COLUMN avatar LONGTEXT COMMENT '头像URL或Base64数据';

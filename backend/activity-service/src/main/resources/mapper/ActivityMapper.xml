@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dzvote.activity.mapper.ActivityMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.dzvote.activity.entity.Activity">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="start_time" property="startTime" jdbcType="TIMESTAMP"/>
+        <result column="end_time" property="endTime" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="vote_limit" property="voteLimit" jdbcType="INTEGER"/>
+        <result column="candidate_count" property="candidateCount" jdbcType="INTEGER"/>
+        <result column="total_votes" property="totalVotes" jdbcType="BIGINT"/>
+        <result column="service_id" property="serviceId" jdbcType="VARCHAR"/>
+        <result column="created_by" property="createdBy" jdbcType="VARCHAR"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+    </resultMap>
+    
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, title, description, start_time, end_time, status, vote_limit, 
+        candidate_count, total_votes, service_id, created_by, created_at, updated_at, deleted
+    </sql>
+    
+    <!-- 查询条件 -->
+    <sql id="Query_Where_Clause">
+        <where>
+            deleted = 0
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.createdBy != null and request.createdBy != ''">
+                AND created_by = #{request.createdBy}
+            </if>
+            <if test="request.keyword != null and request.keyword != ''">
+                AND (title LIKE CONCAT('%', #{request.keyword}, '%') 
+                     OR description LIKE CONCAT('%', #{request.keyword}, '%'))
+            </if>
+        </where>
+    </sql>
+    
+    <!-- 查询活动列表 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM activities
+        <include refid="Query_Where_Clause"/>
+        ORDER BY created_at DESC
+        <if test="request.page != null and request.size != null">
+            LIMIT #{request.size} OFFSET #{request.page}
+        </if>
+    </select>
+    
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM activities
+        WHERE id = #{id} AND deleted = 0
+    </select>
+    
+    <!-- 插入活动 -->
+    <insert id="insert" parameterType="com.dzvote.activity.entity.Activity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO activities (
+            title, description, start_time, end_time, status, vote_limit,
+            candidate_count, total_votes, service_id, created_by, created_at, updated_at, deleted
+        ) VALUES (
+            #{title}, #{description}, #{startTime}, #{endTime}, #{status}, #{voteLimit},
+            #{candidateCount}, #{totalVotes}, #{serviceId}, #{createdBy}, #{createdAt}, #{updatedAt}, 0
+        )
+    </insert>
+    
+    <!-- 更新活动 -->
+    <update id="updateById" parameterType="com.dzvote.activity.entity.Activity">
+        UPDATE activities
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="voteLimit != null">vote_limit = #{voteLimit},</if>
+            <if test="candidateCount != null">candidate_count = #{candidateCount},</if>
+            <if test="totalVotes != null">total_votes = #{totalVotes},</if>
+            <if test="serviceId != null">service_id = #{serviceId},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            updated_at = #{updatedAt}
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+    
+    <!-- 删除活动（逻辑删除） -->
+    <update id="deleteById">
+        UPDATE activities 
+        SET deleted = 1, updated_at = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+    
+    <!-- 查询总数 -->
+    <select id="selectCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM activities
+        <include refid="Query_Where_Clause"/>
+    </select>
+    
+</mapper>

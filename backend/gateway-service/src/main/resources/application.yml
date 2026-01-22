@@ -1,0 +1,60 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+    
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    password: 
+    timeout: 10000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+
+# 短信配置
+sms:
+  api:
+    url: http://localhost:9999/sms/send
+    appid: your_appid
+    appkey: your_appkey
+
+# 微信配置
+wechat:
+  appid: your_wechat_appid
+  secret: your_wechat_secret
+  token: your_wechat_token
+  aes_key: your_wechat_aes_key
+
+# HTTP客户端配置
+http:
+  client:
+    connect-timeout: 5000
+    read-timeout: 10000
+
+logging:
+  level:
+    com.dzvote.gateway: debug
+    org.springframework.web: debug
+  pattern:
+    console: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  info:
+    title: 网关服务API
+    description: 投票网关和多渠道服务
+    version: 2.0.0

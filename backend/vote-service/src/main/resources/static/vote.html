@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线投票系统</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #1e3c72;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* Activity Selector */
+        .activity-selector {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .activity-selector select {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-value {
+            font-size: 40px;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Candidate Grid */
+        .candidate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .candidate-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            position: relative;
+        }
+        .candidate-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Candidate Rank Badge */
+        .rank-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
+        .rank-other { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+
+        .candidate-avatar {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 48px;
+        }
+        .candidate-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .candidate-info {
+            padding: 20px;
+        }
+        .candidate-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+        .candidate-desc {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            min-height: 40px;
+        }
+
+        /* Vote Progress */
+        .vote-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .vote-count {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .vote-number {
+            font-size: 28px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .vote-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .vote-progress {
+            flex: 2;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .vote-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+        }
+
+        .vote-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .vote-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .vote-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Login */
+        .login-section {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 400px;
+            margin: 0 auto 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #667eea;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-logout {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            margin-top: 20px;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        /* Sort Buttons */
+        .sort-buttons {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .sort-buttons label {
+            font-weight: bold;
+            color: #333;
+            margin-right: 10px;
+        }
+        .sort-btn {
+            padding: 8px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .sort-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        .sort-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Custom Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .modal-icon {
+            font-size: 40px;
+            line-height: 1;
+        }
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        .modal-body {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+        .modal-body-text {
+            margin-bottom: 10px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal-btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .modal-btn-secondary {
+            background: #e9ecef;
+            color: #666;
+        }
+        .modal-btn-secondary:hover {
+            background: #dee2e6;
+        }
+        .modal-btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            color: white;
+        }
+        .modal-btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            animation: slideDown 0.4s ease, fadeOut 0.4s ease 2.6s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateX(-50%) translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .toast-success {
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: white;
+        }
+        .toast-error {
+            background: linear-gradient(135deg, #ff5252, #ff1744);
+            color: white;
+        }
+        .toast-warning {
+            background: linear-gradient(135deg, #ffa726, #ff9800);
+            color: white;
+        }
+        .toast-info {
+            background: linear-gradient(135deg, #448aff, #2979ff);
+            color: white;
+        }
+        .toast-icon {
+            font-size: 22px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .candidate-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 在线投票系统</h1>
+            <p>为心仪的候选人投上一票，每人每活动限投 {{ voteLimit }} 票</p>
+        </div>
+
+        <div class="container">
+            <!-- Login Section -->
+            <div v-if="!token" class="login-section">
+                <h2>👤 用户登录</h2>
+                <div v-if="message" :class="['alert', messageType]">{{ message }}</div>
+                <div class="form-group">
+                    <label>手机号（可选）</label>
+                    <input v-model="loginForm.phone" type="text" placeholder="请输入手机号，用于防刷票">
+                </div>
+                <div class="form-group">
+                    <label>用户名（可选）</label>
+                    <input v-model="loginForm.username" type="text" placeholder="请输入用户名">
+                </div>
+                <button class="btn" @click="login" :disabled="loading" style="width: 100%;">
+                    {{ loading ? '登录中...' : '🚀 开始投票' }}
+                </button>
+            </div>
+
+            <!-- Vote Section -->
+            <div v-else>
+                <!-- Activity Selector -->
+                <div class="activity-selector">
+                    <label>📋 选择活动：</label>
+                    <select v-model="selectedActivityId" @change="loadCandidates">
+                        <option value="">请选择活动</option>
+                        <option v-for="activity in activities" :key="activity.id" :value="activity.id">
+                            {{ activity.title }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ totalVotes }}</div>
+                        <div class="stat-label">📊 总票数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ candidates.length }}</div>
+                        <div class="stat-label">👥 候选人数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ voteRemaining }}</div>
+                        <div class="stat-label">🎫 剩余票数</div>
+                    </div>
+                </div>
+
+                <!-- Alert -->
+                <div v-if="message" :class="['alert', messageType]">
+                    {{ message }}
+                </div>
+
+                <!-- Sort Buttons -->
+                <div class="sort-buttons">
+                    <label>排序方式：</label>
+                    <button :class="['sort-btn', {active: sortBy === 'votes'}]" @click="sortBy = 'votes'">
+                        🏆 按票数
+                    </button>
+                    <button :class="['sort-btn', {active: sortBy === 'order'}]" @click="sortBy = 'order'">
+                        📋 按顺序
+                    </button>
+                </div>
+
+                <!-- Candidate Grid -->
+                <div class="candidate-grid">
+                    <div v-for="(candidate, index) in sortedCandidates" :key="candidate.id" class="candidate-card">
+                        <!-- Rank Badge -->
+                        <div v-if="sortBy === 'votes' && index < 3"
+                             :class="['rank-badge', 'rank-' + (index + 1)]">
+                            {{ index + 1 }}
+                        </div>
+                        <div v-else-if="sortBy === 'votes'"
+                             :class="['rank-badge', 'rank-other']">
+                            {{ index + 1 }}
+                        </div>
+
+                        <!-- Avatar -->
+                        <div class="candidate-avatar">
+                            <img v-if="candidate.avatar" :src="getAvatarUrl(candidate.avatar)" :alt="candidate.name">
+                            <span v-else>📷</span>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="candidate-info">
+                            <div class="candidate-name">{{ candidate.name }}</div>
+                            <div class="candidate-desc">{{ truncateDescription(candidate.description) }}</div>
+
+                            <!-- Vote Progress -->
+                            <div class="vote-section">
+                                <div class="vote-count">
+                                    <div class="vote-number">{{ candidate.votes }}</div>
+                                    <div class="vote-label">票</div>
+                                </div>
+                                <div class="vote-progress">
+                                    <div class="vote-progress-fill"
+                                         :style="{width: getVotePercentage(candidate.votes) + '%'}"></div>
+                                </div>
+                            </div>
+
+                            <!-- Vote Button -->
+                            <button class="vote-btn"
+                                    @click="vote(candidate.id)"
+                                    :disabled="voting || votedCandidates[candidate.id]">
+                                <span v-if="voting">投票中...</span>
+                                <span v-else-if="votedCandidates[candidate.id]">✓ 已投票</span>
+                                <span v-else>🎉 为TA投票</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clear Vote Data -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" @click="clearVoteData" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                        🔄 清除投票记录
+                    </button>
+                </div>
+
+                <!-- Logout -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-logout" @click="logout">
+                        🚪 退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Modal -->
+        <div v-if="modal.show" class="modal-overlay" @click.self="closeModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-icon">{{ modal.icon }}</div>
+                    <div class="modal-title">{{ modal.title }}</div>
+                </div>
+                <div class="modal-body">
+                    <div v-for="(text, index) in modal.content" :key="index" class="modal-body-text">
+                        {{ text }}
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button v-if="modal.showCancel" class="modal-btn modal-btn-secondary" @click="closeModal">
+                        {{ modal.cancelText || '取消' }}
+                    </button>
+                    <button class="modal-btn" :class="modal.buttonClass" @click="modal.onConfirm">
+                        {{ modal.confirmText || '确定' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div v-if="toast.show" :class="['toast', toast.type]">
+            <span class="toast-icon">{{ toast.icon }}</span>
+            <span>{{ toast.message }}</span>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    token: localStorage.getItem('token'),
+                    totalVotes: 0,
+                    candidates: [],
+                    activities: [],
+                    selectedActivityId: null,
+                    sortBy: 'votes', // 'votes' 或 'order'
+                    loginForm: {
+                        phone: '',
+                        username: ''
+                    },
+                    loading: false,
+                    voting: false,
+                    // 记录整个活动已投的总票数：total_votes_{activityId}
+                    totalVotedCount: 0,
+                    // 记录每个候选人的投票状态：voted_candidate_{activityId}_{candidateId}
+                    votedCandidates: {},
+                    message: '',
+                    messageType: '',
+                    // Modal
+                    modal: {
+                        show: false,
+                        icon: '',
+                        title: '',
+                        content: [],
+                        confirmText: '确定',
+                        cancelText: '取消',
+                        showCancel: false,
+                        buttonClass: 'modal-btn-primary',
+                        onConfirm: () => {}
+                    },
+                    // Toast
+                    toast: {
+                        show: false,
+                        icon: '',
+                        message: '',
+                        type: 'toast-success',
+                        timeout: null
+                    }
+                }
+            },
+            computed: {
+                sortedCandidates() {
+                    let result = [...this.candidates];
+                    if (this.sortBy === 'votes') {
+                        result.sort((a, b) => b.votes - a.votes);
+                    } else if (this.sortBy === 'order') {
+                        result.sort((a, b) => (a.orderNum || 0) - (b.orderNum || 0));
+                    }
+                    return result;
+                },
+                votePercentage() {
+                    if (this.candidates.length === 0) return '0%';
+                    const totalVoted = this.candidates.filter(c => c.votes > 0).length;
+                    return Math.round((totalVoted / this.candidates.length) * 100) + '%';
+                },
+                voteLimit() {
+                    const activity = this.activities.find(a => a.id === this.selectedActivityId);
+                    return activity ? (activity.voteLimit || 10) : 10;
+                },
+                voteRemaining() {
+                    return Math.max(0, this.voteLimit - this.totalVotedCount);
+                }
+            },
+            mounted() {
+                if (this.token) {
+                    this.loadActivities();
+                }
+            },
+            methods: {
+                login() {
+                    this.loading = true;
+                    this.message = '';
+                    try {
+                        // 设置一个简单token，实际项目中需要调用后端登录接口
+                        this.token = 'token_' + Date.now();
+                        localStorage.setItem('token', this.token);
+                        this.message = '登录成功，开始投票吧！';
+                        this.messageType = 'success';
+                        this.loadActivities();
+                    } catch (error) {
+                        this.message = '登录失败: ' + error.message;
+                        this.messageType = 'error';
+                    }
+                    this.loading = false;
+                },
+
+                logout() {
+                    localStorage.removeItem('token');
+                    // 清理所有该活动的投票记录
+                    if (this.selectedActivityId) {
+                        const prefix1 = 'total_votes_' + this.selectedActivityId;
+                        const prefix2 = 'voted_candidate_' + this.selectedActivityId + '_';
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && (key === prefix1 || key.startsWith(prefix2))) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    }
+                    this.token = null;
+                    this.candidates = [];
+                    this.selectedActivityId = null;
+                    this.totalVotedCount = 0;
+                    this.votedCandidates = {};
+                    this.message = '';
+                },
+
+                clearVoteData() {
+                    this.showConfirm({
+                        icon: '⚠️',
+                        title: '确认清除投票记录',
+                        content: [
+                            '清除后您可以重新投票',
+                            '但之前的投票记录将无法恢复',
+                            '',
+                            '确定要继续吗？'
+                        ],
+                        confirmText: '确认清除',
+                        cancelText: '取消',
+                        buttonClass: 'modal-btn-danger',
+                        onConfirm: () => {
+                            // 清除所有投票相关的localStorage
+                            const keysToRemove = [];
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i);
+                                if (key && (key.startsWith('total_votes_') || key.startsWith('voted_candidate_'))) {
+                                    keysToRemove.push(key);
+                                }
+                            }
+                            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                            // 重置状态
+                            this.totalVotedCount = 0;
+                            this.votedCandidates = {};
+
+                            // 重新加载候选人数据
+                            this.loadCandidates();
+
+                            // 显示成功提示
+                            this.showSuccess('投票记录已清除！现在您可以重新投票了。');
+                        }
+                    });
+                },
+
+                async loadActivities() {
+                    try {
+                        const response = await axios.get('http://localhost:8082/api/activities');
+                        this.activities = response.data.data || [];
+                        // 默认选择第一个进行中的活动
+                        const activeActivity = this.activities.find(a => a.status === 1);
+                        if (activeActivity) {
+                            this.selectedActivityId = activeActivity.id;
+                            await this.loadCandidates();
+                        }
+                    } catch (error) {
+                        console.error('加载活动失败:', error);
+                    }
+                },
+
+                async loadCandidates() {
+                    if (!this.selectedActivityId) return;
+
+                    try {
+                        const response = await axios.get(`http://localhost:8082/api/activities/${this.selectedActivityId}/candidates`);
+                        this.candidates = response.data.data || [];
+                        console.log('加载候选人数据:', this.candidates);
+                        this.candidates.forEach(c => {
+                            console.log(`候选人 ${c.name} (ID: ${c.id}) 的票数: ${c.votes}`);
+                        });
+                        this.totalVotes = this.candidates.reduce((sum, c) => sum + c.votes, 0);
+                        console.log('总票数:', this.totalVotes);
+
+                        // 加载整个活动的已投总票数
+                        const totalVoteKey = 'total_votes_' + this.selectedActivityId;
+                        this.totalVotedCount = parseInt(localStorage.getItem(totalVoteKey) || '0');
+
+                        // 加载每个候选人的投票状态
+                        this.candidates.forEach(c => {
+                            const votedKey = 'voted_candidate_' + this.selectedActivityId + '_' + c.id;
+                            this.votedCandidates[c.id] = localStorage.getItem(votedKey) === 'true';
+                        });
+                    } catch (error) {
+                        this.message = '加载候选人失败: ' + (error.response?.data?.message || error.message);
+                        this.messageType = 'error';
+                    }
+                },
+
+                async vote(candidateId) {
+                    const activity = this.activities.find(a => a.id === this.selectedActivityId);
+                    const voteLimit = activity ? activity.voteLimit || 10 : 10;
+
+                    console.log('=== 开始投票 ===');
+                    console.log('候选人ID:', candidateId);
+                    console.log('活动ID:', this.selectedActivityId);
+                    console.log('手机号:', this.loginForm.phone);
+                    console.log('用户名:', this.loginForm.username);
+
+                    // 检查是否已经投过这个候选人
+                    if (this.votedCandidates[candidateId]) {
+                        this.showModal({
+                            icon: '⚠️',
+                            title: '重复投票',
+                            content: ['您已经为该候选人投过票了', '每个候选人限投 1 票'],
+                            confirmText: '我知道了'
+                        });
+                        return;
+                    }
+
+                    // 检查整个活动是否已达到投票限制
+                    if (this.totalVotedCount >= voteLimit) {
+                        this.showModal({
+                            icon: '🚫',
+                            title: '投票次数已达上限',
+                            content: [
+                                `您已经投了 ${this.totalVotedCount} 票`,
+                                `每人每活动限投 ${voteLimit} 票`,
+                                '',
+                                '如需重新投票，请点击"清除投票记录"按钮'
+                            ],
+                            confirmText: '我知道了'
+                        });
+                        return;
+                    }
+
+                    this.voting = true;
+                    this.message = '';
+                    try {
+                        console.log('发送投票请求...');
+                        const voteData = {
+                            activityId: this.selectedActivityId,
+                            candidateId: candidateId,
+                            channel: 'WEB',
+                            voterPhone: this.loginForm.phone || null,
+                            voterName: this.loginForm.username || null
+                        };
+                        console.log('投票数据:', voteData);
+
+                        const response = await axios.post('http://localhost:8082/api/votes', voteData);
+                        console.log('投票响应:', response.data);
+
+                        // 记录该候选人已投票
+                        const votedKey = 'voted_candidate_' + this.selectedActivityId + '_' + candidateId;
+                        this.votedCandidates[candidateId] = true;
+                        localStorage.setItem(votedKey, 'true');
+
+                        // 更新整个活动的已投总票数
+                        const totalVoteKey = 'total_votes_' + this.selectedActivityId;
+                        this.totalVotedCount++;
+                        localStorage.setItem(totalVoteKey, this.totalVotedCount.toString());
+
+                        // 显示成功提示
+                        this.showSuccess(`投票成功！您已投 ${this.totalVotedCount} 票（共 ${voteLimit} 票）`);
+
+                        // 刷新数据
+                        await this.loadCandidates();
+                    } catch (error) {
+                        console.error('投票错误:', error);
+                        console.error('错误详情:', error.response);
+                        const errorMsg = error.response?.data?.message || error.message;
+
+                        // 判断是否是超出投票限制
+                        if (errorMsg.includes('超出投票限制') || errorMsg.includes('超限') || errorMsg.includes('limit')) {
+                            this.showModal({
+                                icon: '🚫',
+                                title: '投票次数已达上限',
+                                content: [
+                                    errorMsg,
+                                    '',
+                                    `您已投 ${this.totalVotedCount} 票（限投 ${voteLimit} 票）`,
+                                    '',
+                                    '如需重新投票，请点击"清除投票记录"按钮'
+                                ],
+                                confirmText: '我知道了'
+                            });
+                        } else {
+                            this.showError('投票失败：' + errorMsg);
+                        }
+                    }
+                    this.voting = false;
+                    console.log('=== 投票结束 ===');
+                },
+
+                getAvatarUrl(avatar) {
+                    if (!avatar) return '';
+                    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+                        return avatar;
+                    }
+                    return 'http://localhost:8082' + avatar;
+                },
+
+                getVotePercentage(votes) {
+                    if (this.totalVotes === 0) return 0;
+                    return Math.round((votes / this.totalVotes) * 100);
+                },
+
+                truncateDescription(desc) {
+                    if (!desc) return '暂无描述';
+                    if (desc.length <= 30) return desc;
+                    return desc.substring(0, 30) + '...';
+                },
+
+                // Modal Methods
+                showModal(options) {
+                    this.modal = {
+                        show: true,
+                        icon: options.icon || '✅',
+                        title: options.title || '提示',
+                        content: Array.isArray(options.content) ? options.content : [options.content],
+                        confirmText: options.confirmText || '确定',
+                        cancelText: options.cancelText || '取消',
+                        showCancel: options.showCancel || false,
+                        buttonClass: options.buttonClass || 'modal-btn-primary',
+                        onConfirm: options.onConfirm || (() => this.closeModal())
+                    };
+                },
+                closeModal() {
+                    this.modal.show = false;
+                },
+                showConfirm(options) {
+                    this.showModal({
+                        ...options,
+                        showCancel: true
+                    });
+                },
+
+                // Toast Methods
+                showToast(options) {
+                    // Clear previous timeout
+                    if (this.toast.timeout) {
+                        clearTimeout(this.toast.timeout);
+                    }
+
+                    this.toast = {
+                        show: true,
+                        icon: options.icon || '✅',
+                        message: options.message || '操作成功',
+                        type: options.type || 'toast-success',
+                        timeout: setTimeout(() => {
+                            this.toast.show = false;
+                        }, options.duration || 3000)
+                    };
+                },
+                showSuccess(message) {
+                    this.showToast({
+                        icon: '✅',
+                        message,
+                        type: 'toast-success'
+                    });
+                },
+                showError(message) {
+                    this.showToast({
+                        icon: '❌',
+                        message,
+                        type: 'toast-error'
+                    });
+                },
+                showWarning(message) {
+                    this.showToast({
+                        icon: '⚠️',
+                        message,
+                        type: 'toast-warning'
+                    });
+                },
+                showInfo(message) {
+                    this.showToast({
+                        icon: 'ℹ️',
+                        message,
+                        type: 'toast-info'
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

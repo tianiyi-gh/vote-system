@@ -1,0 +1,18 @@
+# 数据库配置
+
+# MySQL Docker 容器
+Container Name: dzvote-mysql8
+Host: localhost
+Port: 3307 (container: 3306)
+
+# 数据库
+Database: dzvote_v2
+
+# 认证信息
+Username: root
+Password: mysql8123
+
+# Docker 命令
+# 启动: docker start dzvote-mysql8
+# 停止: docker stop dzvote-mysql8
+# 查看日志: docker logs dzvote-mysql8

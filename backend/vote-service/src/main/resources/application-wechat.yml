@@ -1,0 +1,16 @@
+# 微信配置
+wechat:
+  # 公众号 AppID（需要在微信公众平台获取）
+  app-id: ${WECHAT_APP_ID:your_appid_here}
+
+  # 公众号 AppSecret（需要在微信公众平台获取）
+  app-secret: ${WECHAT_APP_SECRET:your_appsecret_here}
+
+  # JS 接口安全域名（在微信公众平台配置）
+  js-api-domain: ${WECHAT_JS_API_DOMAIN:yourdomain.com}
+
+  # access_token 缓存时间（秒）
+  token-expire-time: 7200
+
+  # jsapi_ticket 缓存时间（秒）
+  ticket-expire-time: 7200
