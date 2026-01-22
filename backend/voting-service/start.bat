@@ -1,3 +1,0 @@
-@echo off
-start /B java -jar target\activity-service-2.0.0.jar --spring.profiles.active=standalone
-echo Activity Service is starting on port 8081...

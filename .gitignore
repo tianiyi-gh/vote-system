@@ -1,53 +1,178 @@
-# 编译输出
+# ==================== 编译输出 ====================
 target/
 *.class
 *.jar
 *.war
 *.ear
+backend/*/target/
 
-# IDE
+# ==================== 前端构建产物 ====================
+frontend/*/dist/
+frontend/*/node_modules/
+
+# ==================== IDE 配置 ====================
 .idea/
 .vscode/
 *.iml
 *.ipr
 *.iws
 .DS_Store
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
 
-# Node.js
-node_modules/
+# ==================== Node.js ====================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-dist/
+pnpm-debug.log*
+.pnpm-debug.log*
 .nuxt/
 .cache/
 
-# 日志
+# ==================== 日志文件 ====================
 *.log
 logs/
+backend/*.log
 
-# 临时文件
+# ==================== 临时文件 ====================
 *.tmp
 *.temp
 *.bak
 *~
+*.old
 
-# 操作系统
+# ==================== 操作系统 ====================
 Thumbs.db
 .DS_Store
+desktop.ini
 
-# 敏感配置
+# ==================== 敏感配置 ====================
 application-local.yml
 application-prod.yml
 .env
+.env.local
+.env.*.local
+*.keystore
+*.p12
+*.pem
+*.jks
 
-# 上传文件
+# ==================== 上传文件 ====================
 uploads/
+backend/*/uploads/
 
-# 构建文件
-backend/*/target/
-frontend/*/dist/
-frontend/*/node_modules/
+# ==================== 数据库备份 ====================
+*.sql.backup
+*.dump
+backup/
+backups/
 
-# 其他
+# ==================== Python 缓存 ====================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==================== 过期/临时文档 ====================
+# 临时测试文件
+system-test.html
+test_encoding.html
+test_*.py
+test_*.sql
+test_*.js
+test_*.bat
+
+# 过期文档
+JAVA17升级完成.md
+版本兼容性说明.md
+启动脚本.md
+DEPLOY-SUCCESS.md
+FRONTEND_EXPORT_COMPLETE.md
+EXPORT_STATUS.md
+EXPORT_COMPLETION_SUMMARY.md
+EXPORT_ENHANCEMENT_SUMMARY.md
+EXPORT_WORK_SUMMARY.md
+EXPORT_CONFLICT_RESOLUTION.md
+mysql8-install-guide.md
+navicat-mysql8-config.md
+QUICK_DEPLOY.md
+SECURITY_COMPILATION_FIX.md
+WECHAT_JSSDK_SETUP.md
+VOTE_LIMIT_CONFIG_GUIDE.md
+README_JAVA8.md
+
+# 临时脚本
+backend/*.bat
+backend/*.ps1
+backend/*.py
+backend/*.sh
+backend/compile*.bat
+backend/compile*.py
+backend/fix_*.ps1
+backend/fix_*.py
+backend/gen_*.py
+backend/init_*.py
+backend/init_*.sql
+backend/init_test_data.sql
+backend/repack_*.py
+backend/rebuild_*.bat
+backend/rebuild_*.py
+backend/quick_*.bat
+backend/quick_*.py
+backend/create_*.py
+backend/check_*.bat
+backend/add_*.sql
+backend/GenPassword.java
 backend/info.txt
+
+# 前端临时文件
+frontend/*.html
+frontend/admin/index.html
+frontend/admin/nginx.conf
+frontend/h5/index.html
+frontend/h5/nginx.conf
+frontend/*/TODO.md
+
+# 根目录临时文件
+*.bat
+*.ps1
+*.py
+check_*.py
+clear_*.py
+analyze_*.py
+fix_*.py
+test_*.ps1
+
+# 微信验证文件
+MP_verify_*.txt
+
+# 其他无用文件
+*.csv
+db-config.txt
+query
+test.txt
+db_check.txt
+table_structure.txt
+frontend.log
+gmon.out
+
+# Docker 构建产物（保留配置文件，忽略构建过程）
+docker/build.sh

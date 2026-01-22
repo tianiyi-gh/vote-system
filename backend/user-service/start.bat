@@ -1,3 +1,0 @@
-@echo off
-start /B java -jar target\user-service-2.0.0.jar --spring.profiles.active=standalone
-echo User Service is starting on port 8084...
